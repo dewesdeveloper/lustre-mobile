@@ -96,6 +96,14 @@ export default function PrivacySettingsScreen() {
               />
             </Section>
 
+            <Section title="Кому видно библиотеку" subtitle="Кто видит твои игры на вкладке «Игры» в профиле.">
+              <Seg
+                value={p.library_visibility ?? 'friends'}
+                onChange={(v) => void upd({ library_visibility: v })}
+                options={ACTIVITY_OPTIONS}
+              />
+            </Section>
+
             <Section
               title="Лента активности"
               subtitle="Кто видит твою активность в профиле (запуски игр, значки, комментарии).">

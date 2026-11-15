@@ -1,5 +1,6 @@
 import { themedStyles } from '@/theme/themedStyles';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import {
@@ -10,6 +11,7 @@ import {
   Library,
   LifeBuoy,
   Monitor,
+  RefreshCw,
   Shield,
   Store,
   User,
@@ -18,6 +20,8 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, Row } from '@/components/settings/ui';
 import { L } from '@/constants/lustre';
+import { checkForUpdate, currentBuild, currentVersion } from '@/api/appUpdate';
+import { showUpdatePrompt } from '@/components/UpdatePrompt';
 
 type SectionDef = {
   key: string;
@@ -43,6 +47,23 @@ const SECTIONS: SectionDef[] = [
 
 export default function SettingsHubScreen() {
   const { user } = useAuth();
+  const [updateMsg, setUpdateMsg] = useState('');
+  const [checking, setChecking] = useState(false);
+
+  const checkUpdates = async () => {
+    if (checking) return;
+    setChecking(true);
+    setUpdateMsg('');
+    try {
+      const rel = await checkForUpdate({ ignoreSnooze: true });
+      if (rel) showUpdatePrompt(rel);
+      else setUpdateMsg('У вас последняя версия');
+    } catch {
+      setUpdateMsg('Не удалось проверить — нет связи с сервером');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -79,6 +100,18 @@ export default function SettingsHubScreen() {
             />
           ))}
         </View>
+
+        {Platform.OS === 'android' ? (
+          <View style={styles.card}>
+            <Row
+              label={checking ? 'Проверяем…' : 'Проверить обновления'}
+              hint={updateMsg || `Версия ${currentVersion() || '—'} (сборка ${currentBuild() || '—'})`}
+              icon={<RefreshCw size={18} color={L.accent} />}
+              last
+              onPress={() => void checkUpdates()}
+            />
+          </View>
+        ) : null}
 
         <Text style={styles.footer}>Настройки применяются автоматически</Text>
       </ScrollView>

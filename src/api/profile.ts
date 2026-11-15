@@ -91,6 +91,7 @@ export interface PrivacySettings {
   profile_visibility: 'public' | 'friends' | 'private';
   friends_visibility: 'public' | 'friends' | 'private';
   activity_visibility: 'public' | 'friends' | 'private';
+  library_visibility?: 'public' | 'friends' | 'private';
   friend_requests: 'everyone' | 'nobody';
   dms: 'everyone' | 'friends';
   calls: 'everyone' | 'friends';

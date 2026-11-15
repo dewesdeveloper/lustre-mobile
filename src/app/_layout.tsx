@@ -17,6 +17,7 @@ import { configureNotificationHandler } from '@/api/push';
 import CallOverlay from '@/components/CallOverlay';
 import GroupCallOverlay from '@/components/GroupCallOverlay';
 import OfflineBanner from '@/components/OfflineBanner';
+import UpdatePrompt from '@/components/UpdatePrompt';
 import VoiceBar from '@/components/voice/VoiceBar';
 import { initVoiceChannels } from '@/api/voiceChannel';
 import { setLauncherThemeById, useAppTheme } from '@/theme/appTheme';
@@ -89,6 +90,7 @@ export default function RootLayout() {
             </Stack>
             <CallOverlay />
             <GroupCallOverlay />
+            <UpdatePrompt />
           </AuthProvider>
         </ConnectivityProvider>
       </ThemeProvider>

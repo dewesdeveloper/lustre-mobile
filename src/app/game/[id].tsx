@@ -45,6 +45,7 @@ import * as Clipboard from 'expo-clipboard';
 import api from '@/api/client';
 import { deleteReview, getGameReviews, type GameReview } from '@/api/reviews';
 import ReviewComposer from '@/components/game/ReviewComposer';
+import RemoteInstallPanel from '@/components/game/RemoteInstallPanel';
 import { useAuth } from '@/context/AuthContext';
 import { canModerate } from '@/utils/roles';
 import { apiError } from '@/utils/apiError';
@@ -484,12 +485,15 @@ export default function GameScreen() {
       <Modal transparent animationType="fade" visible={showQr} onRequestClose={() => setShowQr(false)}>
         <Pressable style={styles.backdrop} onPress={() => setShowQr(false)}>
           <Pressable style={styles.qrCard} onPress={(e) => e.stopPropagation()}>
+            <ScrollView contentContainerStyle={styles.qrScroll} showsVerticalScrollIndicator={false}>
             <Pressable style={styles.qrClose} onPress={() => setShowQr(false)}>
               <X size={18} color={L.muted} />
             </Pressable>
             <Text style={styles.qrTitle}>Установить на ПК</Text>
             <Text style={styles.qrSub}>{game?.title}</Text>
 
+            {game && showQr ? (
+            <RemoteInstallPanel gameId={game.ID} sources={game.sources || []} hasMagnet={!!game.magnet_uri} onAddedToLibrary={() => setInLibrary(true)}>
             <View style={styles.qrBox}>
               <QRCode value={deepLink} size={210} backgroundColor="#ffffff" color="#000000" />
             </View>
@@ -504,6 +508,9 @@ export default function GameScreen() {
             <Text style={styles.qrHint}>
               Открой ссылку на компьютере с установленным Lustre — лаунчер откроет страницу игры.
             </Text>
+            </RemoteInstallPanel>
+            ) : null}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -1043,7 +1050,8 @@ const styles = themedStyles(() => ({
   reviewContent: { color: 'rgba(244,244,246,0.5)', fontSize: 12, fontFamily: 'JetBrainsMono_400Regular', lineHeight: 18, marginTop: 5 },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  qrCard: { width: '100%', maxWidth: 340, backgroundColor: L.card, borderRadius: 0, borderWidth: 1, borderColor: L.borderStrong, padding: 24, alignItems: 'center' },
+  qrCard: { width: '100%', maxWidth: 340, maxHeight: '90%', backgroundColor: L.card, borderRadius: 0, borderWidth: 1, borderColor: L.borderStrong },
+  qrScroll: { padding: 24, alignItems: 'center' },
   qrClose: { position: 'absolute', top: 14, right: 14, padding: 4 },
   qrTitle: { color: L.text, fontSize: 16, fontFamily: 'Tiny5', textTransform: 'uppercase', letterSpacing: 2 },
   qrSub: { color: L.muted, fontSize: 12, fontFamily: 'JetBrainsMono_400Regular', marginTop: 6, textAlign: 'center' },

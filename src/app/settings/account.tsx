@@ -6,6 +6,7 @@ import { router, type Href } from 'expo-router';
 
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, Row, Section } from '@/components/settings/ui';
+import LinkedAccounts, { realEmail } from '@/components/settings/LinkedAccounts';
 import { Button } from '@/components/ui/form';
 import { L } from '@/constants/lustre';
 
@@ -37,7 +38,7 @@ export default function AccountSettingsScreen() {
               {user?.profile?.display_name || user?.username || 'Гость'}
             </Text>
             <Text style={styles.userEmail} numberOfLines={1}>
-              {user?.email || 'Не указан'}
+              {realEmail(user?.email) || 'Почта не указана'}
             </Text>
           </View>
           <Pressable
@@ -58,9 +59,10 @@ export default function AccountSettingsScreen() {
         </Section>
 
         <Section title="Основное">
-          <Row label="Ваш код друга" value={user?.friend_code || 'Не задан'} />
-          <Row label="Адрес эл. почты" value={user?.email || 'Не указан'} last />
+          <Row label="Ваш код друга" value={user?.friend_code || 'Не задан'} last />
         </Section>
+
+        <LinkedAccounts />
 
         <Button title="Выйти из аккаунта" onPress={() => setLogoutOpen(true)} variant="ghost" />
         <Button title="Удалить аккаунт" onPress={() => setDeleteOpen(true)} variant="ghost" />

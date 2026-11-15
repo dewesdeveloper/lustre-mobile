@@ -5,6 +5,8 @@ export interface PrivacySettings {
   friends_visibility: 'public' | 'friends' | 'private';
   /** Кто видит ленту активности в профиле */
   activity_visibility: 'public' | 'friends' | 'private';
+  /** Кто видит игры в профиле (старые серверы поля не присылают) */
+  library_visibility?: 'public' | 'friends' | 'private';
   friend_requests: 'everyone' | 'nobody';
   dms: 'everyone' | 'friends';
   calls: 'everyone' | 'friends';

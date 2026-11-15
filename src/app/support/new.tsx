@@ -18,6 +18,7 @@ import { Button, ErrorText, Input, Label } from '@/components/ui/form';
 import { useAuth } from '@/context/AuthContext';
 import { apiError } from '@/utils/apiError';
 import { L } from '@/constants/lustre';
+import { realEmail } from '@/components/settings/LinkedAccounts';
 
 type Attachment = { uri: string; name: string; mimeType?: string };
 
@@ -28,7 +29,7 @@ export default function TicketFormScreen() {
   const initial = TOPICS.find((t) => t.category === category) || TOPICS[0];
   const [topic, setTopic] = useState(initial.label);
   const [topicOpen, setTopicOpen] = useState(false);
-  const [email, setEmail] = useState(user?.email || '');
+  const [email, setEmail] = useState(realEmail(user?.email));
   const [message, setMessage] = useState('');
   const [attach, setAttach] = useState<Attachment | null>(null);
   const [sending, setSending] = useState(false);

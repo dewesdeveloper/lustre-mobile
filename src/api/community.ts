@@ -34,7 +34,7 @@ export interface Community {
   is_private: boolean;
   invite_code?: string;
   game_id: number;
-  game: CommunityGame;
+  game: CommunityGame | null;
   theme_id: number;
   theme: CommunityTheme;
   creator_id: number;

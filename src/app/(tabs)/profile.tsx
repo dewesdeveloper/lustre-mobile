@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/form';
 import { useAuth } from '@/context/AuthContext';
 import { L } from '@/constants/lustre';
 import { canModerate } from '@/utils/roles';
+import { realEmail } from '@/components/settings/LinkedAccounts';
 
 // Админка — закрытый модуль: экраны src/app/admin/ есть только в официальной сборке
 // (npm run admin:pull). В сборке из открытого кода пункта «Админ-панель» нет.
@@ -61,7 +62,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.rows}>
-          <Row label="Email" value={user.email} />
+          <Row label="Email" value={realEmail(user.email) || 'Не указана'} />
           <Row label="Код друга" value={user.friend_code || '—'} />
           <Row label="Уровень" value={String(user.profile?.level ?? 0)} />
         </View>

@@ -428,6 +428,18 @@ export default function EditProfileScreen() {
                 onChange={(v) => void updPrivacy({ friends_visibility: v as Visibility })}
               />
 
+              <Text style={[styles.privacyTitle, styles.privacyGap]}>Кому видно библиотеку</Text>
+              <Text style={styles.hint}>Кто видит твои игры в профиле.</Text>
+              <Seg
+                value={privacy.library_visibility ?? 'friends'}
+                options={[
+                  { id: 'public', label: 'Все' },
+                  { id: 'friends', label: 'Друзья' },
+                  { id: 'private', label: 'Только я' },
+                ]}
+                onChange={(v) => void updPrivacy({ library_visibility: v as Visibility })}
+              />
+
               <Text style={[styles.privacyTitle, styles.privacyGap]}>Лента активности</Text>
               <Text style={styles.hint}>Кто видит твою активность в профиле.</Text>
               <Seg
