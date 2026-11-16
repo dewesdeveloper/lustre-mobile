@@ -92,6 +92,21 @@ const handlers = new Set<ChatEventHandler>();
 const stateHandlers = new Set<(connected: boolean) => void>();
 let connected = false;
 
+// Переподключение: пауза растёт 3 → 6 → 12 … до 60 с со случайным разбросом (раньше — ровно
+// раз в 3 с бесконечно). После disconnectChat() переподключения нет: само закрытие сокета
+// вызывало onclose, и соединение через 3 с открывалось снова.
+let reconnectAttempt = 0;
+let stopped = false;
+let openedAt = 0;
+
+function scheduleReconnect() {
+  if (stopped) return;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  const delay = Math.min(60_000, 3000 * 2 ** reconnectAttempt) + Math.random() * 1000;
+  reconnectAttempt = Math.min(reconnectAttempt + 1, 5);
+  reconnectTimer = setTimeout(connectChat, delay);
+}
+
 export function onChatEvent(handler: ChatEventHandler): () => void {
   handlers.add(handler);
   return () => handlers.delete(handler);
@@ -128,6 +143,7 @@ export function isChatConnected(): boolean {
 }
 
 export function connectChat() {
+  stopped = false;
   if (connecting || (ws && ws.readyState <= 1)) return;
   connecting = true;
 
@@ -138,6 +154,7 @@ export function connectChat() {
       ws = new WebSocket(`${WS_CHAT_URL}?ticket=${data.ticket}`);
 
       ws.onopen = () => {
+        openedAt = Date.now();
         const pending = outbox.filter((m) => Date.now() - m.at < OUTBOX_TTL);
         outbox = [];
         pending.forEach((m) => ws?.send(JSON.stringify(m.payload)));
@@ -161,20 +178,23 @@ export function connectChat() {
         setConnected(false);
         if (keepalive) clearInterval(keepalive);
         ws = null;
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(connectChat, 3000);
+        // соединение жило дольше 10 с — обычный обрыв, паузы начинаются сначала
+        if (openedAt && Date.now() - openedAt > 10_000) reconnectAttempt = 0;
+        openedAt = 0;
+        scheduleReconnect();
       };
 
       ws.onerror = () => ws?.close();
     })
     .catch(() => {
       connecting = false;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      reconnectTimer = setTimeout(connectChat, 5000);
+      scheduleReconnect();
     });
 }
 
 export function disconnectChat() {
+  stopped = true;
+  reconnectAttempt = 0;
   if (keepalive) clearInterval(keepalive);
   if (reconnectTimer) clearTimeout(reconnectTimer);
   setConnected(false);

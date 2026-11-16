@@ -13,6 +13,7 @@ import { usePresenceManager } from '@/api/presence';
 import { setProStatus } from '@/api/mediaQuality';
 import { setupIncomingCall } from '@/api/incomingCall';
 import { usePushRegistration, useNotificationObserver } from '@/hooks/use-push';
+import { useEmailReminder } from '@/hooks/use-email-reminder';
 import { configureNotificationHandler } from '@/api/push';
 import CallOverlay from '@/components/CallOverlay';
 import GroupCallOverlay from '@/components/GroupCallOverlay';
@@ -36,6 +37,7 @@ function ChatBootstrap() {
   usePresenceManager();
   usePushRegistration();
   useNotificationObserver();
+  useEmailReminder();
 
   // Тема лаунчера из профиля — перекрашивает приложение при старте и смене аккаунта
   useEffect(() => {

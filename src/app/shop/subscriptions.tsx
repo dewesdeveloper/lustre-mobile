@@ -264,7 +264,7 @@ export default function SubscriptionsScreen() {
                     Подарить <Text style={styles.accentText}>Premium</Text> другу
                   </Text>
                   <Text style={styles.panelText}>
-                    От {nf(399)} ₽. Мгновенная активация. Получи прогресс в бейдже «Меценат».
+                    От {nf(249)} ₽. Мгновенная активация. Получи прогресс в бейдже «Меценат».
                   </Text>
                 </View>
               </View>

@@ -1,7 +1,9 @@
 import { themedStyles } from '@/theme/themedStyles';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -38,6 +40,39 @@ import DataState from '@/components/ui/DataState';
 import { apiError } from '@/utils/apiError';
 import { L } from '@/constants/lustre';
 import { useAuth } from '@/context/AuthContext';
+
+// Картинки из нашего хранилища — картинкой (приложение прикладывает файл строкой
+// «Вложение: <ссылка>»); чужие адреса не встраиваем — только ссылкой.
+const URL_RE = /https?:\/\/[^\s<>"']+/g;
+function isTrustedImage(raw: string) {
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'https:' && (/^storage\.yandexcloud\.net$/i.test(u.hostname) || /(^|\.)lustrehub\.pro$/i.test(u.hostname))
+      && /\.(png|jpe?g|gif|webp)$/i.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function MessageBody({ text }: { text: string }) {
+  const images: string[] = [];
+  const rest = text.replace(URL_RE, (raw) => {
+    const url = raw.replace(/[.,;:!?)]+$/, '');
+    if (!isTrustedImage(url)) return raw;
+    images.push(url);
+    return raw.slice(url.length);
+  }).replace(/Вложение:\s*$/gm, '').trim();
+  return (
+    <>
+      {!!rest && <Text style={styles.bubbleText} selectable>{rest}</Text>}
+      {images.map((url) => (
+        <Pressable key={url} onPress={() => void Linking.openURL(url)}>
+          <Image source={{ uri: url }} style={styles.attImage} resizeMode="contain" />
+        </Pressable>
+      ))}
+    </>
+  );
+}
 
 export default function TicketChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -153,7 +188,7 @@ export default function TicketChatScreen() {
             <Text style={styles.msgDate}>{formatDate(m.created_at)}</Text>
           </View>
           <View style={[styles.bubble, m.is_staff ? styles.bubbleStaff : styles.bubbleUser]}>
-            <Text style={styles.bubbleText}>{m.content}</Text>
+            <MessageBody text={m.content} />
           </View>
         </View>
       </View>
@@ -392,6 +427,7 @@ const styles = themedStyles(() => ({
   bubbleStaff: { backgroundColor: 'rgba(131,56,236,0.08)', borderColor: 'rgba(131,56,236,0.4)' },
   bubbleUser: { backgroundColor: L.cardAlt, borderColor: L.border },
   bubbleText: { color: L.text, fontSize: 13, fontFamily: 'JetBrainsMono_400Regular', lineHeight: 19 },
+  attImage: { width: 220, height: 160, marginTop: 6, backgroundColor: '#000' },
   closedBox: {
     backgroundColor: 'rgba(255,176,32,0.1)',
     borderWidth: 1,

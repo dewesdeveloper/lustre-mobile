@@ -46,10 +46,11 @@ export function configureNotificationHandler(): void {
   const N = notifications();
   if (!N) return;
   N.setNotificationHandler({
-    handleNotification: async () => ({
+    // сообщение от заглушённого собеседника (data.muted) — без звука
+    handleNotification: async (n) => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: true,
+      shouldPlaySound: !(n?.request?.content?.data as { muted?: boolean } | undefined)?.muted,
       shouldSetBadge: false,
     }),
   });
@@ -71,6 +72,13 @@ export async function setupNotificationChannels(): Promise<void> {
         importance: N.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#ff006e',
+      });
+      // тихий канал: сообщения заглушённых собеседников (низкая важность — без звука и вибрации)
+      await N.setNotificationChannelAsync('quiet', {
+        name: 'Без звука',
+        importance: N.AndroidImportance.LOW,
+        sound: null,
+        enableVibrate: false,
       });
       await N.setNotificationChannelAsync('calls', {
         name: 'Звонки',

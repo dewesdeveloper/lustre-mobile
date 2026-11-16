@@ -6,6 +6,7 @@ import { Link, router } from 'expo-router';
 import api from '@/api/client';
 import { allDeviceTokens } from '@/api/deviceTokens';
 import { Button, ErrorText, Input, Label, Screen } from '@/components/ui/form';
+import SocialLogin from '@/components/auth/SocialLogin';
 import { useAuth } from '@/context/AuthContext';
 import { L } from '@/constants/lustre';
 
@@ -87,6 +88,11 @@ export default function LoginScreen() {
         <ErrorText>{error}</ErrorText>
 
         <Button title="Войти" onPress={submit} loading={loading} />
+
+        <SocialLogin
+          consent={terms && privacy}
+          onNeedConsent={() => setError('Чтобы войти через сервис, отметьте согласие с соглашением и политикой конфиденциальности')}
+        />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Нет аккаунта? </Text>

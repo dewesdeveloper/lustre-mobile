@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 import api from '@/api/client';
 import { Row, Section } from '@/components/settings/ui';
@@ -24,6 +25,57 @@ type Links = {
 
 const NAME: Record<string, string> = { steam: 'Steam', github: 'GitHub', google: 'Google', telegram: 'Telegram', itch: 'itch.io' };
 
+const LINK_ERRORS: Record<string, string> = {
+  link_taken: 'Этот аккаунт сервиса уже привязан к другому пользователю Lustre.',
+  link_have: 'К вашему аккаунту уже привязан другой аккаунт этого сервиса.',
+  expired: 'Время ожидания истекло. Попробуйте ещё раз.',
+};
+
+/**
+ * Привязка сервиса: сервис открывается во встроенном браузере, а приложение опрашивает
+ * результат (как лаунчер) — возвращаться в приложение по ссылке не нужно.
+ */
+function useServiceLink(onLinked: () => void) {
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
+
+  const link = async (provider: string) => {
+    if (busy) return;
+    setBusy(provider);
+    setError('');
+    try {
+      const { data } = await api.get<{ url: string; state: string; poll: string }>(`/auth/oauth/link/${provider}`);
+      void WebBrowser.openBrowserAsync(data.url).catch(() => {});
+      // ждём до 5 минут: 200 опросов раз в 1,5 с
+      for (let attempt = 0; attempt < 200 && alive.current; attempt++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        let res: { status?: string; reason?: string } | undefined;
+        try {
+          res = (await api.get('/auth/oauth/result', { params: { state: data.state, poll: data.poll } })).data;
+        } catch { continue; }
+        if (res?.status === 'linked') {
+          WebBrowser.dismissBrowser();
+          onLinked();
+          return;
+        }
+        if (res?.status === 'error') {
+          WebBrowser.dismissBrowser();
+          setError(LINK_ERRORS[res.reason || ''] || 'Не удалось привязать сервис');
+          return;
+        }
+      }
+      if (alive.current) setError(LINK_ERRORS.expired);
+    } catch (e) {
+      setError(apiError(e, 'Не удалось привязать сервис'));
+    } finally {
+      if (alive.current) setBusy('');
+    }
+  };
+  return { link, busy, error };
+}
+
 /** Заглушка вместо почты у аккаунтов из Steam/GitHub — показывать её нельзя */
 export const realEmail = (email?: string | null) => (email && !/@oauth\.local$/i.test(email) ? email : '');
 
@@ -42,6 +94,7 @@ export default function LinkedAccounts() {
     api.get<Links>('/auth/linked-accounts').then((r) => { setData(r.data); setFailed(false); }).catch(() => setFailed(true));
   }, []);
   useEffect(load, [load]);
+  const serviceLink = useServiceLink(() => { load(); void refreshUser(); });
 
   const send = async () => {
     setBusy(true);
@@ -128,13 +181,18 @@ export default function LinkedAccounts() {
             <Row
               key={s.provider}
               label={NAME[s.provider] || s.provider}
-              value={s.linked ? 'Привязан' : 'Не привязан'}
-              hint={s.linked && s.linked_at ? `С ${new Date(s.linked_at).toLocaleDateString('ru-RU')}` : undefined}
-              onPress={s.profile_url ? () => openExternalUrl(s.profile_url) : undefined}
+              value={s.linked ? 'Привязан' : serviceLink.busy === s.provider ? 'Ждём браузер…' : 'Привязать'}
+              hint={s.linked && s.linked_at
+                ? `С ${new Date(s.linked_at).toLocaleDateString('ru-RU')}`
+                : s.linked ? undefined : 'Войдите в сервис, и он привяжется к этому аккаунту'}
+              onPress={s.linked
+                ? (s.profile_url ? () => openExternalUrl(s.profile_url) : undefined)
+                : () => void serviceLink.link(s.provider)}
               last={i === data.services.length - 1}
             />
           ))
         )}
+        {serviceLink.error ? <ErrorText>{serviceLink.error}</ErrorText> : null}
       </Section>
     </>
   );

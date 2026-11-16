@@ -20,6 +20,8 @@ import {
   ArrowDownLeft,
   ArrowLeft,
   ArrowUpRight,
+  Bell,
+  BellOff,
   Download,
   FileText,
   ImagePlus,
@@ -38,6 +40,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 
 import { startCall } from '@/api/call';
+import { setChatMuted, useChatMuted } from '@/api/chatMutes';
 import {
   getMessages,
   sendWS,
@@ -72,6 +75,7 @@ export default function ConversationScreen() {
   const params = useLocalSearchParams<{ id: string; username?: string; otherId?: string; avatar?: string }>();
   const convId = Number(params.id);
   const otherId = Number(params.otherId);
+  const muted = useChatMuted(otherId);
   const { user } = useAuth();
   const myId = user?.id ?? 0;
 
@@ -427,6 +431,12 @@ export default function ConversationScreen() {
               onPress={() => startCall({ id: otherId, username: params.username || 'Пользователь' }, true)}
               style={styles.callBtn}>
               <Video size={16} color={L.muted} />
+            </Pressable>
+            <Pressable
+              onPress={() => void setChatMuted(otherId, !muted).catch(() => {})}
+              accessibilityLabel={muted ? 'Включить звук сообщений' : 'Сообщения без звука'}
+              style={styles.callBtn}>
+              {muted ? <BellOff size={16} color={L.accent} /> : <Bell size={16} color={L.muted} />}
             </Pressable>
           </>
         )}
