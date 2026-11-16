@@ -3,9 +3,9 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
-import { ArrowRight, Sparkles, Tag } from 'lucide-react-native';
+import { ArrowRight, Eye, Sparkles, Tag } from 'lucide-react-native';
 
-import { getNewsById, type NewsItem } from '@/api/news';
+import { getNewsById, viewNews, type NewsItem } from '@/api/news';
 import { openExternalUrl } from '@/utils/openUrl';
 import NewsGallery from '@/components/news/NewsGallery';
 import { fmtNewsDate, newsCatMeta, newsImages } from '@/components/news/newsMeta';
@@ -31,8 +31,13 @@ export default function NewsDetailScreen() {
     setError('');
     getNewsById(id)
       .then((found) => {
-        if (found) setItem(found);
-        else setError('Новость не найдена');
+        if (found) {
+          setItem(found);
+          // открытие засчитывает просмотр (один раз на пользователя)
+          void viewNews(found.id).then((views) => {
+            if (views !== null) setItem((cur) => (cur && cur.id === found.id ? { ...cur, views } : cur));
+          });
+        } else setError('Новость не найдена');
       })
       .catch((e) => setError(apiError(e, 'Не удалось загрузить новость')))
       .finally(() => setLoading(false));
@@ -85,6 +90,12 @@ export default function NewsDetailScreen() {
                 <Text style={[styles.chipText, styles.chipForYouText]}>Для вас</Text>
               </View>
             ) : null}
+            {item.views ? (
+              <View style={styles.views}>
+                <Eye size={11} color={L.muted} />
+                <Text style={styles.viewsText}>{item.views.toLocaleString('ru-RU')}</Text>
+              </View>
+            ) : null}
             {item.created_at ? <Text style={styles.date}>{fmtNewsDate(item.created_at)}</Text> : null}
           </View>
 
@@ -132,6 +143,8 @@ const styles = themedStyles(() => ({
   chipForYou: { backgroundColor: 'rgba(255,0,110,0.1)', borderColor: 'rgba(255,0,110,0.3)' },
   chipForYouText: { color: L.accent, marginLeft: 4 },
   chipText: { fontSize: 10, fontFamily: 'Tiny5', textTransform: 'uppercase', letterSpacing: 1 },
+  views: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  viewsText: { color: L.muted, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' },
   date: {
     marginLeft: 'auto',
     color: 'rgba(244,244,246,0.6)',
