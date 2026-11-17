@@ -1,6 +1,6 @@
 import { themedStyles } from '@/theme/themedStyles';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View, Linking } from 'react-native';
 import { Link, router } from 'expo-router';
 
 import api from '@/api/client';
@@ -94,6 +94,15 @@ export default function LoginScreen() {
           onNeedConsent={() => setError('Чтобы войти через сервис, отметьте согласие с соглашением и политикой конфиденциальности')}
         />
 
+        {/* Вход через Google отключён (17.11.2026): пароль задают через восстановление на сайте */}
+        <Text style={styles.googleHint}>
+          Входили через Google? Этот способ входа отключён. Задайте пароль по почте Gmail на странице{' '}
+          <Text style={styles.footerLink} onPress={() => Linking.openURL('https://lustrehub.pro/reset-password')}>
+            восстановления пароля
+          </Text>
+          {' '}— аккаунт и прогресс сохранены.
+        </Text>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>Нет аккаунта? </Text>
           <Link href="/register" style={styles.footerLink}>
@@ -136,6 +145,7 @@ const styles = themedStyles(() => ({
   },
   checkboxOn: { backgroundColor: L.accent, borderColor: L.accent },
   checkboxText: { color: L.muted, fontSize: 12, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
+  googleHint: { color: L.muted, fontSize: 12, lineHeight: 18, marginTop: 18, fontFamily: 'JetBrainsMono_400Regular', textAlign: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
   footerText: { color: L.muted, fontSize: 13, fontFamily: 'JetBrainsMono_400Regular' },
   footerLink: { color: L.accent, fontSize: 13, fontFamily: 'JetBrainsMono_700Bold', },
