@@ -36,6 +36,10 @@ export default function ReviewComposer({
       setError('Выберите оценку');
       return;
     }
+    if (!text.trim()) {
+      setError('Напишите текст отзыва: что понравилось или не понравилось в игре');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -94,7 +98,7 @@ export default function ReviewComposer({
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="Что понравилось, а что нет? (необязательно)"
+        placeholder="Что понравилось, а что нет?"
         placeholderTextColor={L.muted}
         multiline
         maxLength={MAX_LEN}
