@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -55,6 +54,8 @@ function isTrustedImage(raw: string) {
 }
 
 function MessageBody({ text }: { text: string }) {
+  // картинка разворачивается на весь экран, а не открывается в браузере
+  const [open, setOpen] = useState<string | null>(null);
   const images: string[] = [];
   const rest = text.replace(URL_RE, (raw) => {
     const url = raw.replace(/[.,;:!?)]+$/, '');
@@ -66,10 +67,15 @@ function MessageBody({ text }: { text: string }) {
     <>
       {!!rest && <Text style={styles.bubbleText} selectable>{rest}</Text>}
       {images.map((url) => (
-        <Pressable key={url} onPress={() => void Linking.openURL(url)}>
+        <Pressable key={url} onPress={() => setOpen(url)}>
           <Image source={{ uri: url }} style={styles.attImage} resizeMode="contain" />
         </Pressable>
       ))}
+      <Modal visible={!!open} transparent animationType="fade" onRequestClose={() => setOpen(null)}>
+        <Pressable style={styles.viewer} onPress={() => setOpen(null)} accessibilityLabel="Закрыть">
+          {open ? <Image source={{ uri: open }} style={styles.viewerImage} resizeMode="contain" /> : null}
+        </Pressable>
+      </Modal>
     </>
   );
 }
@@ -428,6 +434,8 @@ const styles = themedStyles(() => ({
   bubbleUser: { backgroundColor: L.cardAlt, borderColor: L.border },
   bubbleText: { color: L.text, fontSize: 13, fontFamily: 'JetBrainsMono_400Regular', lineHeight: 19 },
   attImage: { width: 220, height: 160, marginTop: 6, backgroundColor: '#000' },
+  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', alignItems: 'center', justifyContent: 'center' },
+  viewerImage: { width: '100%', height: '100%' },
   closedBox: {
     backgroundColor: 'rgba(255,176,32,0.1)',
     borderWidth: 1,

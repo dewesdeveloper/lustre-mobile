@@ -59,6 +59,17 @@ export default function EditProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const backTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Черновые загрузки (выбраны, но профиль ещё не сохранён). Прежний файл удаляется только после
+  // сохранения: раньше он стирался сразу при выборе новой картинки, и «Отмена» оставляла в
+  // хранилище ненужную загрузку, а профиль — со ссылкой на удалённый файл.
+  const drafts = useRef(new Set<string>());
+  const savedRef = useRef(false);
+  const ownPrefix = user ? `/users/${user.id}/` : '';
+  useEffect(() => () => {
+    // ушли без сохранения — черновые загрузки не нужны
+    if (!savedRef.current) drafts.current.forEach((u) => void deleteProfileImage(u));
+    drafts.current.clear();
+  }, []);
 
   // Купленные косметические предметы (аватары/фоны/титулы)
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -182,7 +193,12 @@ export default function EditProfileScreen() {
       });
       if (!url) throw new Error('Пустой ответ загрузки');
       setForm((prev) => ({ ...prev, [isAvatar ? 'avatar_url' : 'banner_url']: url }));
-      if (oldUrl && oldUrl !== url) void deleteProfileImage(oldUrl);
+      // заменили прежнюю черновую загрузку — её можно удалить сразу; сохранённую — только после «Сохранить»
+      if (oldUrl && oldUrl !== url && drafts.current.has(oldUrl)) {
+        drafts.current.delete(oldUrl);
+        void deleteProfileImage(oldUrl);
+      }
+      drafts.current.add(url);
     } catch (e) {
       setError(apiError(e, 'Не удалось загрузить изображение'));
     } finally {
@@ -197,7 +213,18 @@ export default function EditProfileScreen() {
     setError('');
     setSaved(false);
     try {
+      const before = initialForm;
       await updateProfile(form);
+      // профиль сохранён: прежние свои файлы и неиспользованные черновики больше не нужны
+      for (const field of ['avatar_url', 'banner_url'] as const) {
+        const old = before[field];
+        if (old && old !== form[field] && ownPrefix && old.includes(ownPrefix)) void deleteProfileImage(old);
+      }
+      drafts.current.forEach((u) => {
+        if (u !== form.avatar_url && u !== form.banner_url) void deleteProfileImage(u);
+      });
+      drafts.current.clear();
+      savedRef.current = true;
       await refreshUser();
       setSaved(true);
       backTimer.current = setTimeout(() => router.back(), 900);
@@ -209,6 +236,8 @@ export default function EditProfileScreen() {
   };
 
   const reset = () => {
+    drafts.current.forEach((u) => void deleteProfileImage(u));
+    drafts.current.clear();
     setForm(initialForm);
     setSaved(false);
     setError('');
